@@ -1,0 +1,6 @@
+"","GOBPID","Pvalue","OddsRatio","ExpCount","Count","Size","Term"
+"1","GO:0003008",0.0102767982809399,0.279591836734694,9.37951807228916,3,346,"system process"
+"2","GO:0010035",0.0238608844078899,0,3.57831325301205,0,132,"response to inorganic substance"
+"3","GO:0050877",0.0284056094479052,0.175806451612903,5.17771084337349,1,191,"nervous system process"
+"4","GO:0090066",0.0426344673008985,0,3.03614457831325,0,112,"regulation of anatomical structure size"
+"5","GO:0000904",0.0443773604563817,0.195892723180795,4.68975903614458,1,173,"cell morphogenesis involved in differentiation"
