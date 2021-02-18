@@ -18,7 +18,7 @@ Creating gene and trait network map:
 
 Make trait t-SNE network:
 
--Within the "T-SNE_scripts" directory, the "T_SNE_Traits.py" creates the trait t-SNE network map
+- Within the "T-SNE_scripts" directory, the "T_SNE_Traits.py" creates the trait t-SNE network map
 
 
 Hypothesis testing for Gene network map:
