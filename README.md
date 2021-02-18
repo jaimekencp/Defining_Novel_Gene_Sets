@@ -4,7 +4,7 @@ Here I describe which scripts to run in order.
 
 Preparing the data input files to make the Gene and Trait network matrices:
 
-- The first script to run are found in the R_code directory under the name "create_necessary_dataframes.py". 
+- The first script to run are found in the R_code directory under the name "create_necessary_dataframes.Rmd". 
 This script creates the trait by gene matrix and the trait correlation dataframe.
 
 Creating the gene and trait network matrices:
