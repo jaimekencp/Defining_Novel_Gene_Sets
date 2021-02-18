@@ -1,0 +1,133 @@
+---
+title: "create_plots"
+author: "Jaime Ken Costa Pereira"
+date: "1/20/2021"
+output: html_document
+---
+
+```{r}
+library(ggplot2)
+library(tidyverse)
+library(reshape2)
+library(ggsignif)
+library(gginference)
+library(MASS)
+library(lawstat)
+library(car)
+library(ggpubr)
+library(ggpmisc)
+library(cowplot)
+```
+
+make boxplot comparing tsne_dbscan_permuted_gnm distribution and tsne_dbscan_non_permuted_distribution
+
+```{r setup, include=FALSE}
+permuted <- read.csv("tsne_dbscan_random_distribution.csv", header=TRUE) 
+non_permuted <- read.csv("tsne_dbscan_non_random_distribution.csv", header=TRUE) 
+
+plot.data <- cbind(permuted[,"number_of_clusters"], non_permuted[,"number_of_clusters"])
+
+plot.data <- as.data.frame(plot.data)
+
+
+names(plot.data)[names(plot.data) == "V1"] <- "Permuted"
+names(plot.data)[names(plot.data) == "V2"] <- "Original Data"
+
+```
+
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r}
+ggplot(melt(plot.data), aes(variable, value)) + geom_boxplot() + labs(y= "Number of DBSCAN Clusters",x="") + geom_signif(comparisons = list(c("Permuted", "Original Data")), 
+              map_signif_level=TRUE) 
+
+ggsave("tsne_dbscan_hypothesis_testing.png")
+
+t.test(non_permuted$number_of_clusters, permuted$number_of_clusters, var.equal = F)
+
+```
+
+1 sample t-test of the non-randomness score distribution of gnm permuted 
+
+```{r}
+non_randomness_distribution <- read.csv("non_randomness_distribution.csv", header=TRUE)
+non_randomness_distribution <- non_randomness_distribution[,c("randomized_GNM", "R.G.")]
+non_randomness_distribution <- melt(non_randomness_distribution, id.vars = "R.G.", value.name = "randomized_GNM")
+non_randomness_distribution <- non_randomness_distribution[,c("variable", "R.G.")]
+
+non_randomness_gnm <- read.csv("non_randomness_gnm_score.csv", header=TRUE)
+non_randomness_gnm <- non_randomness_gnm[,c("GNM", "R.G.")]
+non_randomness_gnm <- melt(non_randomness_gnm, id.vars = "R.G.", value.name = "GNM")
+non_randomness_gnm <- non_randomness_gnm[,c("variable", "R.G.")]
+
+
+```
+
+
+```{r}
+pnorm(non_randomness_gnm$R.G., mean(non_randomness_distribution$R.G.), sd(non_randomness_distribution$R.G.), lower.tail = T)
+```
+
+
+```{r}
+gnm_non_randomness_score <- as.numeric(non_randomness_gnm$R.G.)
+qplot(non_randomness_distribution$R.G.,
+      geom="histogram",
+      binwidth=5,  
+      main="Distribution of Non-Randomness Scores", 
+      xlab="Non-Randomness Scores", ylab="counts", fill=I("blue"),
+      xlim=c(3900,4500)) +  geom_point(aes(gnm_non_randomness_score,0), color="red", size=5)
+
+ggsave("Non_randomness_score_distribution.png")
+
+
+```
+```{r}
+df <- read.csv("degree_node_size.csv", header=TRUE)
+my.formula <- y ~ log(x)
+p <- ggplot(data = df, aes(x=Node.Size, y =Degrees)) + labs(x = "Node Size", y = "Degrees") +
+              geom_smooth(method = "lm", se=FALSE, color="red", formula = my.formula) + 
+              stat_poly_eq(formula = my.formula, 
+                           aes(label = paste(..rr.label..,sep="~~~")), parse=TRUE) +
+              geom_point()
+p
+fit <- lm(Degrees ~ log(Node.Size), df)
+summary(fit)
+```
+
+
+```{r}
+df_1 <- read.csv("degree_centrality_node_size.csv", header=TRUE)
+my.formula <- y ~ log(x)
+p_1 <- ggplot(data = df_1, aes(x=Node.Size, y =Degree_centrality)) + labs(x = "Node Size", y = "Degree Centrality") +
+              geom_smooth(method = "lm", se=FALSE, color="red", formula = my.formula) + 
+              stat_poly_eq(formula = my.formula, 
+                           aes(label = paste(..rr.label..,sep="~~~")), parse=TRUE) +
+              geom_point()
+p_1
+fit_1 <- lm(Degree_centrality ~ log(Node.Size), df_1)
+summary(fit_1)
+
+plot_grid(p, p_1, labels = "AUTO")
+ggsave("degree_centrality_node_size.png")
+```
+
+```{r}
+gene_degree_centrality <- read.csv("gene_node_degree_centrality.csv", row.names = 1)
+my.formula <- y ~ log(x)
+gene_degree_node_plot <- ggplot(gene_degree_centrality, aes(Node_Size, Degree_Centrality)) + geom_point() + 
+              labs(x = "Node Size", y = "Degree Centrality") + 
+              geom_smooth(method = "lm", se=FALSE, color="red", formula = my.formula) + 
+              stat_poly_eq(formula = my.formula, 
+                           aes(label = paste(..rr.label..,sep="~~~")), parse=TRUE) +
+              geom_point()
+
+fit_2 <- lm(Degree_Centrality ~ log(Node_Size), gene_degree_centrality)
+summary(fit_2)
+gene_degree_node_plot
+ggsave("gene_degree_centrality.png")
+```
+

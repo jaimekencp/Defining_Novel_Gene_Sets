@@ -1,0 +1,688 @@
+---
+title: "Analyse_Gene_Clusters"
+author: "Jaime Ken Costa Pereira"
+date: "1/11/2021"
+output: html_document
+---
+
+load R pacakges
+
+```{r}
+library(dplyr)
+library("AnnotationDbi")
+library("org.Hs.eg.db")
+library("ALL")
+library("hgu95av2.db")
+library("GO.db")
+library("annotate")
+library("genefilter")
+library("GOstats")
+library("RColorBrewer")
+library("xtable")
+library("Rgraphviz")
+library(ggplot2)
+library(xtable)
+```
+
+```{r pressure, echo=FALSE}
+t_sne_dbscan_df <- read.csv("gene_network_matrix_tsne_dbscan.csv", header=TRUE) 
+t_sne_dbscan_df$DBSCAN_cluster <- factor(t_sne_dbscan_df$DBSCAN_cluster)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+dbscan_plot <- ggplot(data=t_sne_dbscan_df, aes(tsne_1, tsne_2, colour = t_sne_dbscan_df$DBSCAN_cluster))+ 
+  geom_point() +
+  scale_colour_manual(values=setNames(t_sne_dbscan_df$color_codes, t_sne_dbscan_df$DBSCAN_cluster), name= "Clusters")+
+  labs(x="T-SNE component 1", y="T-SNE component 2", title = "DBSCAN Cluster Labels")
+
+png("gene_network_matrix_tsne_dbscan.png")
+print(dbscan_plot)
+dev.off()
+```
+
+```{r pressure, echo=FALSE}
+tsne_plot <- ggplot(data=t_sne_dbscan_df, aes(tsne_1, tsne_2)) + 
+  geom_point() + labs(x="T-SNE component 1", y="T-SNE component 2", title = "T-SNE Embedding of Data")
+
+png("gene_network_matrix_tsne.png")
+print(tsne_plot)
+dev.off()
+```
+
+
+GoSTATS uses EntreZ ID's, therefore, I convert the ENSEMBLE gene IDs to Entrez ID's. Since a few genes are not converted, these are then removed.A total of 231 genes are removed.
+
+```{r}
+gene_cluster_columns <- c("GENES", "DBSCAN_cluster")
+Gene_cluster_df <- t_sne_dbscan_df[gene_cluster_columns]
+gene_ensemble_IDS <- Gene_cluster_df[,c('GENES')]
+rownames(Gene_cluster_df) <- gene_ensemble_IDS
+Gene_cluster_df$entrez = mapIds(org.Hs.eg.db,
+                    keys=row.names(Gene_cluster_df), 
+                    column="ENTREZID",
+                    keytype="ENSEMBL",
+                    multiVals="first")
+
+Gene_cluster_df <- na.omit(Gene_cluster_df)
+Gene_cluster_df <- Gene_cluster_df[,c("entrez", "DBSCAN_cluster")]
+Gene_cluster_df <- distinct(Gene_cluster_df, entrez, .keep_all = TRUE)
+gene_entrez_IDS <- Gene_cluster_df$entrez
+rownames(Gene_cluster_df) <- Gene_cluster_df[,c("entrez")]
+
+```
+
+
+Seperate the 23 clusters
+```{r}
+gene_universe <- as.vector(Gene_cluster_df$entrez)
+
+for(i in 0:22) { 
+ nam <- paste("cluster_", i, sep = "")
+ assign(nam, Gene_cluster_df[Gene_cluster_df$DBSCAN_cluster == i,] %>% rownames()) 
+}
+
+```
+
+
+
+Analysis of Cluster 0 - overrepresented and underrepresented terms
+
+```{r}
+hgCutoff <- 0.05
+
+params <- new("GOHyperGParams", geneIds = cluster_0, universeGeneIds = gene_universe,
+              annotation = "hgu95av2", ontology = "BP", pvalueCutoff = hgCutoff, conditional = FALSE,
+              testDirection = "over")
+
+#Change conditional to true to do a conditional hypogeometric test
+hgOver <- hyperGTest(params)
+GO_over_cluster_0 <- summary(hgOver)
+
+write.csv(GO_over_cluster_0, "GO_over_cluster_0.csv")
+
+
+#  test for under represented terms
+paramsUnder <- params
+testDirection(paramsUnder) <- "under"
+hgUnder <- hyperGTest(paramsUnder)
+Go_under_cluster_0 <- summary(hgUnder)
+
+write.csv(Go_under_cluster_0, "Go_under_cluster_0.csv")
+
+```
+
+Analysis of Cluster 1
+
+```{r}
+hgCutoff <- 0.05
+
+params <- new("GOHyperGParams", geneIds = cluster_1, universeGeneIds = gene_universe,
+              annotation = "hgu95av2", ontology = "BP", pvalueCutoff = hgCutoff, conditional = FALSE,
+              testDirection = "over")
+
+#Change conditional to true to do a conditional hypogeometric test
+hgOver <- hyperGTest(params)
+GO_over_cluster_1 <- summary(hgOver)
+
+write.csv(GO_over_cluster_1, "GO_over_cluster_1.csv")
+
+
+#  test for under represented terms
+paramsUnder <- params
+testDirection(paramsUnder) <- "under"
+hgUnder <- hyperGTest(paramsUnder)
+Go_under_cluster_1 <- summary(hgUnder)
+
+write.csv(Go_under_cluster_1, "Go_under_cluster_1.csv")
+
+
+```
+
+
+Analysis of cluster_2
+
+```{r}
+hgCutoff <- 0.05
+
+params <- new("GOHyperGParams", geneIds = cluster_2, universeGeneIds = gene_universe,
+              annotation = "hgu95av2", ontology = "BP", pvalueCutoff = hgCutoff, conditional = FALSE,
+              testDirection = "over")
+
+#Change conditional to true to do a conditional hypogeometric test
+hgOver <- hyperGTest(params)
+GO_over_cluster_2 <- summary(hgOver)
+
+write.csv(GO_over_cluster_2, "GO_over_cluster_2.csv")
+
+
+#  test for under represented terms
+paramsUnder <- params
+testDirection(paramsUnder) <- "under"
+hgUnder <- hyperGTest(paramsUnder)
+Go_under_cluster_2 <- summary(hgUnder)
+
+write.csv(Go_under_cluster_2, "Go_under_cluster_2.csv")
+
+```
+
+Analysis of cluster_3
+
+```{r}
+hgCutoff <- 0.05
+
+params <- new("GOHyperGParams", geneIds = cluster_3, universeGeneIds = gene_universe,
+              annotation = "hgu95av2", ontology = "BP", pvalueCutoff = hgCutoff, conditional = FALSE,
+              testDirection = "over")
+
+#Change conditional to true to do a conditional hypogeometric test
+hgOver <- hyperGTest(params)
+GO_over_cluster_3 <- summary(hgOver)
+
+write.csv(GO_over_cluster_3, "GO_over_cluster_3.csv")
+
+
+#  test for under represented terms
+paramsUnder <- params
+testDirection(paramsUnder) <- "under"
+hgUnder <- hyperGTest(paramsUnder)
+Go_under_cluster_3 <- summary(hgUnder)
+
+write.csv(Go_under_cluster_3, "Go_under_cluster_3.csv")
+```
+
+Analysis of cluster_4
+
+```{r}
+hgCutoff <- 0.05
+
+params <- new("GOHyperGParams", geneIds = cluster_4, universeGeneIds = gene_universe,
+              annotation = "hgu95av2", ontology = "BP", pvalueCutoff = hgCutoff, conditional = FALSE,
+              testDirection = "over")
+
+#Change conditional to true to do a conditional hypogeometric test
+hgOver <- hyperGTest(params)
+GO_over_cluster_4 <- summary(hgOver)
+
+write.csv(GO_over_cluster_4, "GO_over_cluster_4.csv")
+
+
+#  test for under represented terms
+paramsUnder <- params
+testDirection(paramsUnder) <- "under"
+hgUnder <- hyperGTest(paramsUnder)
+Go_under_cluster_4 <- summary(hgUnder)
+
+write.csv(Go_under_cluster_4, "Go_under_cluster_4.csv")
+
+```
+
+Analysis of cluster_5
+
+```{r}
+hgCutoff <- 0.05
+
+params <- new("GOHyperGParams", geneIds = cluster_5, universeGeneIds = gene_universe,
+              annotation = "hgu95av2", ontology = "BP", pvalueCutoff = hgCutoff, conditional = FALSE,
+              testDirection = "over")
+
+#Change conditional to true to do a conditional hypogeometric test
+hgOver <- hyperGTest(params)
+GO_over_cluster_5 <- summary(hgOver)
+
+write.csv(GO_over_cluster_5, "GO_over_cluster_5.csv")
+
+
+#  test for under represented terms
+paramsUnder <- params
+testDirection(paramsUnder) <- "under"
+hgUnder <- hyperGTest(paramsUnder)
+Go_under_cluster_5 <- summary(hgUnder)
+
+write.csv(Go_under_cluster_5, "Go_under_cluster_5.csv")
+
+```
+
+Analysis of cluster_6
+
+```{r}
+hgCutoff <- 0.05
+
+params <- new("GOHyperGParams", geneIds = cluster_6, universeGeneIds = gene_universe,
+              annotation = "hgu95av2", ontology = "BP", pvalueCutoff = hgCutoff, conditional = FALSE,
+              testDirection = "over")
+
+#Change conditional to true to do a conditional hypogeometric test
+hgOver <- hyperGTest(params)
+GO_over_cluster_6 <- summary(hgOver)
+
+write.csv(GO_over_cluster_6, "GO_over_cluster_6.csv")
+
+
+#  test for under represented terms
+paramsUnder <- params
+testDirection(paramsUnder) <- "under"
+hgUnder <- hyperGTest(paramsUnder)
+Go_under_cluster_6 <- summary(hgUnder)
+
+write.csv(Go_under_cluster_6, "Go_under_cluster_6.csv")
+
+```
+
+Analysis of cluster_7
+
+```{r}
+hgCutoff <- 0.05
+hgCutoff <- 0.05
+
+params <- new("GOHyperGParams", geneIds = cluster_7, universeGeneIds = gene_universe,
+              annotation = "hgu95av2", ontology = "BP", pvalueCutoff = hgCutoff, conditional = FALSE,
+              testDirection = "over")
+
+#Change conditional to true to do a conditional hypogeometric test
+hgOver <- hyperGTest(params)
+GO_over_cluster_7 <- summary(hgOver)
+
+write.csv(GO_over_cluster_7, "GO_over_cluster_7.csv")
+
+
+#  test for under represented terms
+paramsUnder <- params
+testDirection(paramsUnder) <- "under"
+hgUnder <- hyperGTest(paramsUnder)
+Go_under_cluster_7 <- summary(hgUnder)
+
+write.csv(Go_under_cluster_7, "Go_under_cluster_7.csv")
+
+```
+
+Analysis of cluster_8
+
+```{r}
+hgCutoff <- 0.05
+
+params <- new("GOHyperGParams", geneIds = cluster_8, universeGeneIds = gene_universe,
+              annotation = "hgu95av2", ontology = "BP", pvalueCutoff = hgCutoff, conditional = FALSE,
+              testDirection = "over")
+
+#Change conditional to true to do a conditional hypogeometric test
+hgOver <- hyperGTest(params)
+GO_over_cluster_8 <- summary(hgOver)
+
+write.csv(GO_over_cluster_8, "GO_over_cluster_8.csv")
+
+
+#  test for under represented terms
+paramsUnder <- params
+testDirection(paramsUnder) <- "under"
+hgUnder <- hyperGTest(paramsUnder)
+Go_under_cluster_8 <- summary(hgUnder)
+
+write.csv(Go_under_cluster_8, "Go_under_cluster_8.csv")
+
+```
+
+Analysis of cluster_9
+
+```{r}
+hgCutoff <- 0.05
+
+params <- new("GOHyperGParams", geneIds = cluster_9, universeGeneIds = gene_universe,
+              annotation = "hgu95av2", ontology = "BP", pvalueCutoff = hgCutoff, conditional = FALSE,
+              testDirection = "over")
+
+#Change conditional to true to do a conditional hypogeometric test
+hgOver <- hyperGTest(params)
+GO_over_cluster_9 <- summary(hgOver)
+
+write.csv(GO_over_cluster_9, "GO_over_cluster_9.csv")
+
+
+#  test for under represented terms
+paramsUnder <- params
+testDirection(paramsUnder) <- "under"
+hgUnder <- hyperGTest(paramsUnder)
+Go_under_cluster_9 <- summary(hgUnder)
+
+write.csv(Go_under_cluster_9, "Go_under_cluster_9.csv")
+
+```
+
+Analysis of cluster_10
+
+```{r}
+hgCutoff <- 0.05
+
+params <- new("GOHyperGParams", geneIds = cluster_10, universeGeneIds = gene_universe,
+              annotation = "hgu95av2", ontology = "BP", pvalueCutoff = hgCutoff, conditional = FALSE,
+              testDirection = "over")
+
+#Change conditional to true to do a conditional hypogeometric test
+hgOver <- hyperGTest(params)
+GO_over_cluster_10 <- summary(hgOver)
+
+write.csv(GO_over_cluster_10, "GO_over_cluster_10.csv")
+
+
+#  test for under represented terms
+paramsUnder <- params
+testDirection(paramsUnder) <- "under"
+hgUnder <- hyperGTest(paramsUnder)
+Go_under_cluster_10 <- summary(hgUnder)
+
+write.csv(Go_under_cluster_10, "Go_under_cluster_10.csv")
+
+```
+
+Analysis of cluster_11
+
+```{r}
+hgCutoff <- 0.05
+
+params <- new("GOHyperGParams", geneIds = cluster_11, universeGeneIds = gene_universe,
+              annotation = "hgu95av2", ontology = "BP", pvalueCutoff = hgCutoff, conditional = FALSE,
+              testDirection = "over")
+
+#Change conditional to true to do a conditional hypogeometric test
+hgOver <- hyperGTest(params)
+GO_over_cluster_11 <- summary(hgOver)
+
+write.csv(GO_over_cluster_11, "GO_over_cluster_11.csv")
+
+
+#  test for under represented terms
+paramsUnder <- params
+testDirection(paramsUnder) <- "under"
+hgUnder <- hyperGTest(paramsUnder)
+Go_under_cluster_11 <- summary(hgUnder)
+
+write.csv(Go_under_cluster_11, "Go_under_cluster_11.csv")
+
+```
+
+Analysis of cluster_12
+```{r}
+hgCutoff <- 0.05
+
+params <- new("GOHyperGParams", geneIds = cluster_12, universeGeneIds = gene_universe,
+              annotation = "hgu95av2", ontology = "BP", pvalueCutoff = hgCutoff, conditional = FALSE,
+              testDirection = "over")
+
+#Change conditional to true to do a conditional hypogeometric test
+hgOver <- hyperGTest(params)
+GO_over_cluster_12 <- summary(hgOver)
+
+write.csv(GO_over_cluster_12, "GO_over_cluster_12.csv")
+
+
+#  test for under represented terms
+paramsUnder <- params
+testDirection(paramsUnder) <- "under"
+hgUnder <- hyperGTest(paramsUnder)
+Go_under_cluster_12 <- summary(hgUnder)
+
+write.csv(Go_under_cluster_12, "Go_under_cluster_12.csv")
+
+```
+
+Analysis of cluster_13
+
+```{r}
+hgCutoff <- 0.05
+
+params <- new("GOHyperGParams", geneIds = cluster_13, universeGeneIds = gene_universe,
+              annotation = "hgu95av2", ontology = "BP", pvalueCutoff = hgCutoff, conditional = FALSE,
+              testDirection = "over")
+
+#Change conditional to true to do a conditional hypogeometric test
+hgOver <- hyperGTest(params)
+GO_over_cluster_13 <- summary(hgOver)
+
+write.csv(GO_over_cluster_13, "GO_over_cluster_13.csv")
+
+
+#  test for under represented terms
+paramsUnder <- params
+testDirection(paramsUnder) <- "under"
+hgUnder <- hyperGTest(paramsUnder)
+Go_under_cluster_13 <- summary(hgUnder)
+
+write.csv(Go_under_cluster_13, "Go_under_cluster_13.csv")
+
+```
+
+Analysis of cluster_14
+
+```{r}
+hgCutoff <- 0.05
+
+params <- new("GOHyperGParams", geneIds = cluster_14, universeGeneIds = gene_universe,
+              annotation = "hgu95av2", ontology = "BP", pvalueCutoff = hgCutoff, conditional = FALSE,
+              testDirection = "over")
+
+#Change conditional to true to do a conditional hypogeometric test
+hgOver <- hyperGTest(params)
+GO_over_cluster_14 <- summary(hgOver)
+
+write.csv(GO_over_cluster_14, "GO_over_cluster_14.csv")
+
+
+#  test for under represented terms
+paramsUnder <- params
+testDirection(paramsUnder) <- "under"
+hgUnder <- hyperGTest(paramsUnder)
+Go_under_cluster_14 <- summary(hgUnder)
+
+write.csv(Go_under_cluster_14, "Go_under_cluster_14.csv")
+
+```
+
+Analysis of cluster_15
+
+```{r}
+hgCutoff <- 0.05
+
+params <- new("GOHyperGParams", geneIds = cluster_15, universeGeneIds = gene_universe,
+              annotation = "hgu95av2", ontology = "BP", pvalueCutoff = hgCutoff, conditional = FALSE,
+              testDirection = "over")
+
+#Change conditional to true to do a conditional hypogeometric test
+hgOver <- hyperGTest(params)
+GO_over_cluster_15 <- summary(hgOver)
+
+write.csv(GO_over_cluster_15, "GO_over_cluster_15.csv")
+
+
+#  test for under represented terms
+paramsUnder <- params
+testDirection(paramsUnder) <- "under"
+hgUnder <- hyperGTest(paramsUnder)
+Go_under_cluster_15 <- summary(hgUnder)
+
+write.csv(Go_under_cluster_15, "Go_under_cluster_15.csv")
+
+```
+
+Analysis of cluster_16
+
+```{r}
+hgCutoff <- 0.05
+
+params <- new("GOHyperGParams", geneIds = cluster_16, universeGeneIds = gene_universe,
+              annotation = "hgu95av2", ontology = "BP", pvalueCutoff = hgCutoff, conditional = FALSE,
+              testDirection = "over")
+
+#Change conditional to true to do a conditional hypogeometric test
+hgOver <- hyperGTest(params)
+GO_over_cluster_16 <- summary(hgOver)
+
+write.csv(GO_over_cluster_16, "GO_over_cluster_16.csv")
+
+
+#  test for under represented terms
+paramsUnder <- params
+testDirection(paramsUnder) <- "under"
+hgUnder <- hyperGTest(paramsUnder)
+Go_under_cluster_16 <- summary(hgUnder)
+
+write.csv(Go_under_cluster_16, "Go_under_cluster_16.csv")
+
+```
+
+Analysis of cluster_17
+
+```{r}
+hgCutoff <- 0.05
+
+params <- new("GOHyperGParams", geneIds = cluster_17, universeGeneIds = gene_universe,
+              annotation = "hgu95av2", ontology = "BP", pvalueCutoff = hgCutoff, conditional = FALSE,
+              testDirection = "over")
+
+#Change conditional to true to do a conditional hypogeometric test
+hgOver <- hyperGTest(params)
+GO_over_cluster_17 <- summary(hgOver)
+
+write.csv(GO_over_cluster_17, "GO_over_cluster_17.csv")
+
+
+#  test for under represented terms
+paramsUnder <- params
+testDirection(paramsUnder) <- "under"
+hgUnder <- hyperGTest(paramsUnder)
+Go_under_cluster_17 <- summary(hgUnder)
+
+write.csv(Go_under_cluster_17, "Go_under_cluster_17.csv")
+
+```
+
+Analysis of cluster_18
+```{r}
+hgCutoff <- 0.05
+
+params <- new("GOHyperGParams", geneIds = cluster_18, universeGeneIds = gene_universe,
+              annotation = "hgu95av2", ontology = "BP", pvalueCutoff = hgCutoff, conditional = FALSE,
+              testDirection = "over")
+
+#Change conditional to true to do a conditional hypogeometric test
+hgOver <- hyperGTest(params)
+GO_over_cluster_18 <- summary(hgOver)
+
+write.csv(GO_over_cluster_18, "GO_over_cluster_18.csv")
+
+
+#  test for under represented terms
+paramsUnder <- params
+testDirection(paramsUnder) <- "under"
+hgUnder <- hyperGTest(paramsUnder)
+Go_under_cluster_18 <- summary(hgUnder)
+
+write.csv(Go_under_cluster_18, "Go_under_cluster_18.csv")
+
+```
+
+Analysis of cluster_19
+```{r}
+hgCutoff <- 0.05
+
+params <- new("GOHyperGParams", geneIds = cluster_19, universeGeneIds = gene_universe,
+              annotation = "hgu95av2", ontology = "BP", pvalueCutoff = hgCutoff, conditional = FALSE,
+              testDirection = "over")
+
+#Change conditional to true to do a conditional hypogeometric test
+hgOver <- hyperGTest(params)
+GO_over_cluster_19 <- summary(hgOver)
+
+write.csv(GO_over_cluster_19, "GO_over_cluster_19.csv")
+
+
+#  test for under represented terms
+paramsUnder <- params
+testDirection(paramsUnder) <- "under"
+hgUnder <- hyperGTest(paramsUnder)
+Go_under_cluster_19 <- summary(hgUnder)
+
+write.csv(Go_under_cluster_19, "Go_under_cluster_19.csv")
+
+```
+
+Analysis of cluster_20
+
+```{r}
+hgCutoff <- 0.05
+
+params <- new("GOHyperGParams", geneIds = cluster_20, universeGeneIds = gene_universe,
+              annotation = "hgu95av2", ontology = "BP", pvalueCutoff = hgCutoff, conditional = FALSE,
+              testDirection = "over")
+
+#Change conditional to true to do a conditional hypogeometric test
+hgOver <- hyperGTest(params)
+GO_over_cluster_20 <- summary(hgOver)
+
+write.csv(GO_over_cluster_20, "GO_over_cluster_20.csv")
+
+
+#  test for under represented terms
+paramsUnder <- params
+testDirection(paramsUnder) <- "under"
+hgUnder <- hyperGTest(paramsUnder)
+Go_under_cluster_20 <- summary(hgUnder)
+
+write.csv(Go_under_cluster_20, "Go_under_cluster_20.csv")
+
+```
+
+Analysis of cluster_21
+
+```{r}
+hgCutoff <- 0.05
+
+params <- new("GOHyperGParams", geneIds = cluster_21, universeGeneIds = gene_universe,
+              annotation = "hgu95av2", ontology = "BP", pvalueCutoff = hgCutoff, conditional = FALSE,
+              testDirection = "over")
+
+#Change conditional to true to do a conditional hypogeometric test
+hgOver <- hyperGTest(params)
+GO_over_cluster_21 <- summary(hgOver)
+
+write.csv(GO_over_cluster_21, "GO_over_cluster_21.csv")
+
+
+#  test for under represented terms
+paramsUnder <- params
+testDirection(paramsUnder) <- "under"
+hgUnder <- hyperGTest(paramsUnder)
+Go_under_cluster_21 <- summary(hgUnder)
+
+write.csv(Go_under_cluster_21, "Go_under_cluster_21.csv")
+
+```
+
+Analysis of cluster_22
+```{r}
+hgCutoff <- 0.05
+
+params <- new("GOHyperGParams", geneIds = cluster_22, universeGeneIds = gene_universe,
+              annotation = "hgu95av2", ontology = "BP", pvalueCutoff = hgCutoff, conditional = FALSE,
+              testDirection = "over")
+
+#Change conditional to true to do a conditional hypogeometric test
+hgOver <- hyperGTest(params)
+GO_over_cluster_22 <- summary(hgOver)
+
+write.csv(GO_over_cluster_22, "GO_over_cluster_22.csv")
+
+
+#  test for under represented terms
+paramsUnder <- params
+testDirection(paramsUnder) <- "under"
+hgUnder <- hyperGTest(paramsUnder)
+Go_under_cluster_22 <- summary(hgUnder)
+
+write.csv(Go_under_cluster_22, "Go_under_cluster_22.csv")
+
+```
+
+

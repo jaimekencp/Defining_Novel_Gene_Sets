@@ -1,0 +1,112 @@
+---
+title: "Form the gene_trait_p_value and trait_genetic_correlation_score datasets"
+author: "Jaime Ken Costa Pereira"
+date: "12/29/2020"
+output: html_document
+---
+load R packages
+```{r}
+library(dplyr)
+library(tidyr)
+library(readxl)
+```
+
+The 558 traits studied in GWAS contains 50,000 samples or more. These are the initial traits that I am going to be using for the purpose of this study. 
+
+```{r}
+traits_558 <- read.csv("558_traits.csv", header = TRUE)
+gene_trait_p_value_df <- read.csv("magma.P.r3.txt", sep ="\t", check.names = FALSE, row.names = "GENE")
+```
+
+
+I am now going to subset the 558 traits from my "gene by trait dataframe" and also change the id column names to their corresponding trait name.
+
+```{r}
+gene_trait_p_value_df <- gene_trait_p_value_df[ ,traits_558$atlas.ID]
+colnames(gene_trait_p_value_df) <- traits_558$uniqTrait
+```
+
+Genes that have NA values for traits are discarded 
+
+```{r}
+gene_trait_p_value_df <- na.omit(gene_trait_p_value_df)
+```
+
+A gene is considered to be associated to a trait if its P value < 5e-08. Therefore, traits that have no genes associated to them are discarded.
+
+```{r}
+trait_minimum_p_values <- apply(gene_trait_p_value_df,2,min) %>% as.data.frame()
+trait_names <- colnames(gene_trait_p_value_df) %>% as.data.frame()
+trait_p_values <- cbind(trait_names, trait_minimum_p_values)
+colnames(trait_p_values) <- c("trait_names", "min_P_values")
+trait_p_values <- subset(trait_p_values, trait_p_values$min_P_values < 0.00000005)
+gene_trait_p_value_df <- gene_trait_p_value_df[, trait_p_values$trait_names]
+```
+
+There are some duplicated traits in the dataframe. Therefore, these are discarded.
+
+```{r}
+duplicated_traits <- gene_trait_p_value_df[duplicated(as.list(gene_trait_p_value_df))]
+duplicated_traits <- colnames(duplicated_traits)
+gene_trait_p_value_df <- gene_trait_p_value_df[,!(names(gene_trait_p_value_df) %in% duplicated_traits)]
+```
+
+Export the gene_trait_p_value_df to a csv file
+
+```{r}
+write.csv(gene_trait_p_value_df,"17518_genes_401_traits.csv",row.names = TRUE)
+```
+
+Several traits in the 17518_genes_407_traits.csv are genetically correlated with one another. We therefore want to remove these traits that are highly correlated and only keep one trait that represents this highly correlated group.
+
+I will only be making the Trait_GC.csv file that I will use later on to remove the highly correlated traits
+
+Lets first read in the files we need.
+
+```{r}
+gene_correlation_scores <- read.csv("gwasATLAS_v20191115_GC.txt", sep ="\t")
+gene_correlation_scores <- gene_correlation_scores[, c("id1", "id2", "rg")]
+
+chosen_trait_list <- as.vector(traits_558$atlas.ID)
+
+```
+
+Like in the previous section, we are only interested in the genetic correlation (GC) scores of the 558 chosen traits
+
+```{r}
+gene_correlation_scores <- gene_correlation_scores[gene_correlation_scores$id1 %in%
+                                                     chosen_trait_list,]
+gene_correlation_scores <- gene_correlation_scores[gene_correlation_scores$id2 %in% 
+                                                     chosen_trait_list, ]
+
+colnames(traits_558)[1] <- "id1"
+colnames(traits_558)[2] <- "uniqTrait1"
+
+gene_correlation_scores <- merge(gene_correlation_scores, traits_558, by="id1")
+
+colnames(traits_558)[1] <- "id2"
+colnames(traits_558)[2] <- "uniqTrait2"
+
+gene_correlation_scores <- merge(gene_correlation_scores, traits_558, by="id2")
+gene_correlation_scores <- gene_correlation_scores[,c(4,5,3)]
+
+```
+
+
+Because different GWAS studies using the same trait are present, the GC scores were also quantified for the same trait. Therefore these can be removed.
+
+```{r}
+
+gene_correlation_score_duplicates <- subset(gene_correlation_scores,
+                                            (as.character(uniqTrait1) == as.character(uniqTrait2)))
+
+gene_correlation_score_no_duplicates <- subset(gene_correlation_scores, 
+                                               (as.character(uniqTrait1) != as.character(uniqTrait2)))
+```
+
+export dataframe to csv file
+
+```{r}
+write.csv(gene_correlation_score_no_duplicates, "Trait_GC.csv", row.names=FALSE)
+```
+
