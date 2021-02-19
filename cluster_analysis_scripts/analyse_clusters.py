@@ -4,6 +4,8 @@ from collections import Counter
 """ This script performs the trait enrichment analysis of each cluster"""
 
 def create_cluster_dict(df):
+    cluster_dict = {}
+    
     for i, cluster in enumerate(set(df["DBSCAN_cluster"])):
         if cluster == -1:
             pass
