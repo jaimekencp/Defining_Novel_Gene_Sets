@@ -1,0 +1,2 @@
+,Category,GeneSet,N_genes,N_overlap,p,adjP,genes,link,corrected_P
+5,Positional_gene_sets,chr3q22,20,8,5.7699779960796916e-08,1.7252234208278277e-05,PLXND1:TMCC1:SLC35G2:NCK1:IL20RB:ESYT3:CEP70:FAIM,http://www.gsea-msigdb.org/gsea/msigdb/cards/chr3q22,0.0003968013867904004
