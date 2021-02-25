@@ -53,4 +53,5 @@ directory
 - To perform the GO enrichment analysis, run the "Cluster_Analysis.Rmd" script found in "R_code" directory
 - To adjust the P value of the GO terms, run the "multiple_testing_correcte_p.py" script
 
-
+Finding novel gene sets:
+- To see which genes from each of our gene clusters do not overlap with the genes from gene clusters, please run "gene_set_overlap.py"
